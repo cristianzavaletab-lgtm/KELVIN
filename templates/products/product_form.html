@@ -26,7 +26,16 @@
                 <img id="imagePreview" src="{% if field.value %}{{ field.value.url }}{% endif %}"
                     style="max-width: 200px; margin-top: 10px; {% if not field.value %}display:none;{% endif %}">
                 {% else %}
+                {% if field.name == 'category' %}
+                <div class="d-flex gap-sm">
+                    {{ field }}
+                    <a href="{% url 'products:category_create' %}" class="btn btn-outline" title="Nueva Categoría">
+                        <i class="bi bi-plus-lg"></i>
+                    </a>
+                </div>
+                {% else %}
                 {{ field }}
+                {% endif %}
                 {% endif %}
 
                 {% if field.errors %}

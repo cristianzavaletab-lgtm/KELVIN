@@ -77,48 +77,17 @@ class ProductDeleteView(LoginRequiredMixin, DeleteView):
         self.object = self.get_object()
         self.object.is_active = False
         self.object.save()
+        self.object.save()
         return HttpResponseRedirect(self.success_url)
-
-
-class CategoryListView(LoginRequiredMixin, ListView):
-    model = Category
-    template_name = 'products/category_list.html'
-    context_object_name = 'categories'
-    paginate_by = 20
-    
-    def get_queryset(self):
-        queryset = Category.objects.all()
-        search = self.request.GET.get('search')
-        if search:
-            queryset = queryset.filter(name__icontains=search)
-        return queryset.order_by('name')
 
 
 class CategoryCreateView(LoginRequiredMixin, CreateView):
     model = Category
     template_name = 'products/category_form.html'
-    fields = ['name', 'description', 'icon']
-    success_url = reverse_lazy('products:category_list')
+    fields = ['name', 'icon', 'description']
+    success_url = reverse_lazy('products:product_create')
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['title'] = 'Nueva Categoría'
         return context
-
-
-class CategoryUpdateView(LoginRequiredMixin, UpdateView):
-    model = Category
-    template_name = 'products/category_form.html'
-    fields = ['name', 'description', 'icon']
-    success_url = reverse_lazy('products:category_list')
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = 'Editar Categoría'
-        return context
-
-
-class CategoryDeleteView(LoginRequiredMixin, DeleteView):
-    model = Category
-    template_name = 'products/category_confirm_delete.html'
-    success_url = reverse_lazy('products:category_list')
