@@ -23,7 +23,7 @@ services:
       - key: WEB_CONCURRENCY
         value: 4
       - key: CSRF_TRUSTED_ORIGINS
-        value: https://agropecuaria-mijael.onrender.com
+        value: https://agropecuaria.onrender.com
 
 databases:
   - name: agropecuaria-db
