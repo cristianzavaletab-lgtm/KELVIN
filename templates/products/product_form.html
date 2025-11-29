@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - AGROTECNICA MIJAEL{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <i class="bi bi-box"></i> {{ title }}
+    </div>
+    <div class="card-body">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            {% for field in form %}
+            <div class="form-group">
+                <label class="form-label" for="{{ field.id_for_label }}">
+                    {{ field.label }}
+                    {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                </label>
+
+                {% if field.name == 'image' %}
+                <input type="file" name="{{ field.name }}" class="form-control" id="{{ field.id_for_label }}"
+                    accept="image/*" capture="environment">
+                <img id="imagePreview" src="{% if field.value %}{{ field.value.url }}{% endif %}"
+                    style="max-width: 200px; margin-top: 10px; {% if not field.value %}display:none;{% endif %}">
+                {% else %}
+                {{ field }}
+                {% endif %}
+
+                {% if field.errors %}
+                <div class="text-danger mt-sm">{{ field.errors }}</div>
+                {% endif %}
+
+                {% if field.help_text %}
+                <small class="text-muted">{{ field.help_text }}</small>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            <div class="d-flex gap-sm mt-lg">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="bi bi-check-circle"></i> Guardar
+                </button>
+                <a href="{% url 'products:product_list' %}" class="btn btn-outline btn-lg">
+                    <i class="bi bi-x-circle"></i> Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Image preview
+    document.querySelector('input[type="file"]').addEventListener('change', function (e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const preview = document.getElementById('imagePreview');
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+</script>
+{% endblock %}

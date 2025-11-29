@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Clientes - AGROTECNICA MIJAEL{% endblock %}
+{% block page_title %}Clientes{% endblock %}
+
+{% block app_bar_action %}
+<a href="{% url 'customers:customer_create' %}" class="app-bar-icon">
+    <i class="bi bi-person-plus"></i>
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="search-bar">
+    <i class="bi bi-search search-bar-icon"></i>
+    <input type="text" id="searchInput" placeholder="Buscar clientes..." value="{{ request.GET.search }}">
+</div>
+
+<div class="list-group">
+    {% for customer in customers %}
+    <a href="{% url 'customers:customer_detail' customer.pk %}" class="list-item">
+        <div class="list-item-icon" style="background-color: var(--primary);">
+            <i class="bi bi-person"></i>
+        </div>
+        <div class="list-item-content">
+            <div class="list-item-title">{{ customer.name }}</div>
+            <div class="list-item-subtitle">DNI: {{ customer.dni }}</div>
+        </div>
+        <div class="list-item-action" style="display:flex; gap: var(--space-sm); align-items:center;">
+            <span class="badge">{{ customer.phone|default:"" }}</span>
+            <a href="{% url 'customers:customer_edit' customer.pk %}" class="btn btn-outline btn-sm btn-icon" title="Editar" onclick="event.stopPropagation();">
+                <i class="bi bi-pencil"></i>
+            </a>
+            <a href="{% url 'customers:customer_delete' customer.pk %}" class="btn btn-danger btn-sm btn-icon" title="Eliminar" onclick="event.stopPropagation();">
+                <i class="bi bi-trash"></i>
+            </a>
+        </div>
+    </a>
+    {% empty %}
+    <div class="empty-state">
+        <div class="empty-state-icon"><i class="bi bi-inbox"></i></div>
+        <div class="empty-state-title">No hay clientes</div>
+        <div class="empty-state-text">Agrega tu primer cliente</div>
+        <a href="{% url 'customers:customer_create' %}" class="btn btn-primary mt-lg">
+            <i class="bi bi-person-plus"></i> Nuevo Cliente
+        </a>
+    </div>
+    {% endfor %}
+</div>
+
+{% if is_paginated %}
+<div class="d-flex justify-content-center gap-sm mt-lg">
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}" class="btn btn-outline btn-sm">Anterior</a>
+    {% endif %}
+    <span class="btn btn-sm" style="background: var(--gray-light);">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}" class="btn btn-outline btn-sm">Siguiente</a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const searchInput = document.getElementById('searchInput');
+    let searchTimeout;
+    searchInput.addEventListener('input', function () {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            const url = new URL(window.location);
+            if (this.value) {
+                url.searchParams.set('search', this.value);
+            } else {
+                url.searchParams.delete('search');
+            }
+            window.location = url;
+        }, 500);
+    });
+</script>
+{% endblock %}

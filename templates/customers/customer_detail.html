@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Cliente {{ customer.name }} - AGROTECNICA MIJAEL{% endblock %}
+{% block page_title %}{{ customer.name }}{% endblock %}
+
+{% block content %}
+<div class="card mb-lg">
+    <div class="card-header">
+        <i class="bi bi-person"></i> Información del Cliente
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-6">
+                <strong>Nombre:</strong><br>
+                {{ customer.name }}
+            </div>
+            <div class="col-6">
+                <strong>DNI:</strong><br>
+                {{ customer.dni }}
+            </div>
+        </div>
+        <div class="row mt-md">
+            <div class="col-6">
+                <strong>Teléfono:</strong><br>
+                {{ customer.phone|default:"-" }}
+            </div>
+            <div class="col-6">
+                <strong>Email:</strong><br>
+                {{ customer.email|default:"-" }}
+            </div>
+        </div>
+        <div class="row mt-md">
+            <div class="col-12">
+                <strong>Dirección:</strong><br>
+                {{ customer.address|default:"-" }}
+            </div>
+        </div>
+    </div>
+    </div>
+
+<div class="mt-lg">
+    <a href="{% url 'customers:customer_list' %}" class="btn btn-outline btn-block">
+        <i class="bi bi-arrow-left"></i> Volver a Clientes
+    </a>
+</div>
+{% endblock %}
+

@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Productos - AGROTECNICA MIJAEL{% endblock %}
+{% block page_title %}Productos{% endblock %}
+
+{% block app_bar_action %}
+<a href="{% url 'products:product_create' %}" class="app-bar-icon">
+    <i class="bi bi-plus-lg"></i>
+</a>
+{% endblock %}
+
+{% block content %}
+<!-- Search Bar -->
+<div class="search-bar">
+    <i class="bi bi-search search-bar-icon"></i>
+    <input type="text" id="searchInput" placeholder="Buscar productos..." value="{{ request.GET.search }}">
+</div>
+
+<!-- Alerts -->
+{% if low_stock_count > 0 %}
+<div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle"></i>
+    <strong>{{ low_stock_count }}</strong> producto(s) con stock bajo
+</div>
+{% endif %}
+
+<!-- Product Grid -->
+<div class="product-grid">
+    {% for product in products %}
+    <div class="product-card" onclick="location.href='{% url 'products:product_edit' product.pk %}'">
+        {% if product.image %}
+        <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-card-image">
+        {% else %}
+        <div class="product-card-image"
+            style="display: flex; align-items: center; justify-content: center; background: var(--gray-light);">
+            <i class="bi bi-box" style="font-size: 48px; color: var(--gray);"></i>
+        </div>
+        {% endif %}
+
+        {% if product.is_low_stock %}
+        <span class="badge badge-warning product-card-badge">Stock Bajo</span>
+        {% elif product.is_expiring_soon %}
+        <span class="badge badge-danger product-card-badge">Por Vencer</span>
+        {% endif %}
+
+        <div class="product-card-body">
+            <div class="product-card-title">{{ product.name }}</div>
+            <div class="product-card-price">S/ {{ product.sale_price }}</div>
+            <div class="product-card-stock">
+                <i class="bi bi-box-seam"></i> Stock: {{ product.stock }}
+            </div>
+        </div>
+        <div class="d-flex" style="gap: var(--space-sm); padding: var(--space-md);">
+            <a href="{% url 'products:product_delete' product.pk %}" class="btn btn-danger btn-sm btn-icon" title="Eliminar" onclick="event.stopPropagation();">
+                <i class="bi bi-trash"></i>
+            </a>
+        </div>
+    </div>
+    {% empty %}
+    <div class="empty-state" style="grid-column: 1 / -1;">
+        <div class="empty-state-icon">
+            <i class="bi bi-inbox"></i>
+        </div>
+        <div class="empty-state-title">No hay productos</div>
+        <div class="empty-state-text">Agrega tu primer producto</div>
+        <a href="{% url 'products:product_create' %}" class="btn btn-primary mt-lg">
+            <i class="bi bi-plus-lg"></i> Agregar Producto
+        </a>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if is_paginated %}
+<div class="d-flex justify-content-center gap-sm mt-lg">
+    {% if page_obj.has_previous %}
+    <a href="?page=1" class="btn btn-outline btn-sm">Primera</a>
+    <a href="?page={{ page_obj.previous_page_number }}" class="btn btn-outline btn-sm">Anterior</a>
+    {% endif %}
+
+    <span class="btn btn-sm" style="background: var(--gray-light);">
+        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+    </span>
+
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}" class="btn btn-outline btn-sm">Siguiente</a>
+    <a href="?page={{ page_obj.paginator.num_pages }}" class="btn btn-outline btn-sm">Última</a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Live search
+    const searchInput = document.getElementById('searchInput');
+    let searchTimeout;
+
+    searchInput.addEventListener('input', function () {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            const url = new URL(window.location);
+            if (this.value) {
+                url.searchParams.set('search', this.value);
+            } else {
+                url.searchParams.delete('search');
+            }
+            window.location = url;
+        }, 500);
+    });
+</script>
+{% endblock %}

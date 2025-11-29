@@ -1,0 +1,444 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}POS - Punto de Venta{% endblock %}
+{% block page_title %}Punto de Venta{% endblock %}
+
+{% block extra_css %}
+<style>
+    .pos-container {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: var(--space-md);
+    }
+
+    .pos-products {
+        background: var(--white);
+        border-radius: var(--radius-lg);
+        padding: var(--space-md);
+    }
+
+    .pos-cart {
+        background: var(--white);
+        border-radius: var(--radius-lg);
+        padding: var(--space-lg);
+        position: sticky;
+        top: 72px;
+    }
+
+    .cart-item {
+        display: flex;
+        align-items: center;
+        gap: var(--space-sm);
+        padding: var(--space-md);
+        background: var(--gray-light);
+        border-radius: var(--radius-md);
+        margin-bottom: var(--space-sm);
+    }
+
+    .cart-item-info {
+        flex: 1;
+    }
+
+    .cart-item-qty {
+        display: flex;
+        align-items: center;
+        gap: var(--space-xs);
+    }
+
+    .qty-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: none;
+        background: var(--primary);
+        color: var(--white);
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    .cart-totals {
+        border-top: 2px solid var(--gray-light);
+        padding-top: var(--space-md);
+        margin-top: var(--space-md);
+    }
+
+    .total-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: var(--space-sm);
+    }
+
+    @media (min-width: 768px) {
+        .pos-container {
+            grid-template-columns: 2fr 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pos-container">
+    <!-- Products Section -->
+    <div class="pos-products">
+        <!-- Search -->
+        <div class="search-bar mb-lg">
+            <i class="bi bi-search search-bar-icon"></i>
+            <input type="text" id="productSearch" placeholder="Buscar producto...">
+        </div>
+
+        <!-- Product Grid -->
+        <div class="product-grid" id="productGrid">
+            {% for product in products %}
+            <div class="product-card"
+                onclick="addToCart({{ product.id }}, '{{ product.name|escapejs }}', {{ product.sale_price }}, {{ product.stock }})">
+                {% if product.image %}
+                <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-card-image">
+                {% else %}
+                <div class="product-card-image"
+                    style="display: flex; align-items: center; justify-content: center; background: var(--gray-light);">
+                    <i class="bi bi-box" style="font-size: 48px; color: var(--gray);"></i>
+                </div>
+                {% endif %}
+
+                <div class="product-card-body">
+                    <div class="product-card-title">{{ product.name }}</div>
+                    <div class="product-card-price">S/ {{ product.sale_price }}</div>
+                    <div class="product-card-stock">
+                        <i class="bi bi-box-seam"></i> {{ product.stock }}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Cart Section -->
+    <div class="pos-cart">
+        <h3 class="mb-lg">
+            <i class="bi bi-cart"></i> Carrito
+        </h3>
+
+        <!-- Cart Items -->
+        <div id="cartItems" class="mb-lg">
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="bi bi-cart-x"></i>
+                </div>
+                <div class="empty-state-text">Carrito vacío</div>
+            </div>
+        </div>
+
+        <div class="card mb-lg">
+            <div class="card-header">
+                <i class="bi bi-person"></i> Cliente
+            </div>
+            <div class="card-body">
+                <div class="form-check mb-sm">
+                    <input type="checkbox" id="isNewCustomer" class="form-check-input" onchange="toggleCustomerMode()">
+                    <label for="isNewCustomer">Nuevo Cliente</label>
+                </div>
+                <div id="existingCustomerFields">
+                    <label class="form-label">Seleccionar</label>
+                    <select id="customerSelect" class="form-control">
+                        <option value="">Cliente General</option>
+                        {% for c in customers %}
+                        <option value="{{ c.id }}">{{ c.name }} ({{ c.dni }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div id="newCustomerFields" style="display:none;">
+                    <div class="row">
+                        <div class="col-6">
+                            <label class="form-label">DNI</label>
+                            <input type="text" id="newCustomerDni" class="form-control" placeholder="Ej: 12345678">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Nombre</label>
+                            <input type="text" id="newCustomerName" class="form-control" placeholder="Nombre y Apellido">
+                        </div>
+                    </div>
+                    <div class="row mt-sm">
+                        <div class="col-6">
+                            <label class="form-label">Teléfono</label>
+                            <input type="text" id="newCustomerPhone" class="form-control" placeholder="Opcional">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Email</label>
+                            <input type="email" id="newCustomerEmail" class="form-control" placeholder="Opcional">
+                        </div>
+                    </div>
+                    <div class="mt-sm">
+                        <label class="form-label">Dirección</label>
+                        <input type="text" id="newCustomerAddress" class="form-control" placeholder="Opcional">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Method -->
+        <div class="form-group">
+            <label class="form-label">Método de Pago</label>
+            <select id="paymentMethod" class="form-control">
+                <option value="CASH">Efectivo</option>
+                <option value="YAPE">Yape/Plin</option>
+                <option value="CARD">Tarjeta</option>
+                <option value="TRANSFER">Transferencia</option>
+            </select>
+        </div>
+
+        <!-- Totals -->
+        <div class="cart-totals">
+            <div class="total-row">
+                <span>Subtotal:</span>
+                <strong id="subtotalDisplay">S/ 0.00</strong>
+            </div>
+            
+            <div class="total-row" style="font-size: var(--font-size-xl); color: var(--primary);">
+                <span>TOTAL:</span>
+                <strong id="totalDisplay">S/ 0.00</strong>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <button class="btn btn-primary btn-lg btn-block mt-lg" onclick="processSale()" id="btnProcessSale" disabled>
+            <i class="bi bi-check-circle"></i> Finalizar Venta
+        </button>
+
+        <button class="btn btn-outline btn-block mt-sm" onclick="clearCart()">
+            <i class="bi bi-trash"></i> Limpiar Carrito
+        </button>
+        <button class="btn btn-secondary btn-block mt-sm" id="btnShareWhatsApp" style="display:none;" onclick="shareInvoicePNG()">
+            <i class="bi bi-whatsapp"></i> Compartir PNG por WhatsApp
+        </button>
+        </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let cart = [];
+    let lastInvoicePngUrl = null;
+
+    function toggleCustomerMode() {
+        const isNew = document.getElementById('isNewCustomer').checked;
+        document.getElementById('existingCustomerFields').style.display = isNew ? 'none' : 'block';
+        document.getElementById('newCustomerFields').style.display = isNew ? 'block' : 'none';
+    }
+
+    function addToCart(productId, productName, price, stock) {
+        const existingItem = cart.find(item => item.product_id === productId);
+
+        if (existingItem) {
+            if (existingItem.quantity < stock) {
+                existingItem.quantity++;
+                existingItem.subtotal = existingItem.quantity * existingItem.price;
+            } else {
+                App.showToast('Stock insuficiente', 'warning');
+                return;
+            }
+        } else {
+            cart.push({
+                product_id: productId,
+                name: productName,
+                price: price,
+                quantity: 1,
+                subtotal: price,
+                max_stock: stock
+            });
+        }
+
+        renderCart();
+        updateTotals();
+    }
+
+    function removeFromCart(productId) {
+        cart = cart.filter(item => item.product_id !== productId);
+        renderCart();
+        updateTotals();
+    }
+
+    function updateQuantity(productId, delta) {
+        const item = cart.find(item => item.product_id === productId);
+        if (!item) return;
+
+        const newQty = item.quantity + delta;
+        if (newQty <= 0) {
+            removeFromCart(productId);
+            return;
+        }
+
+        if (newQty > item.max_stock) {
+            App.showToast('Stock insuficiente', 'warning');
+            return;
+        }
+
+        item.quantity = newQty;
+        item.subtotal = item.quantity * item.price;
+        renderCart();
+        updateTotals();
+    }
+
+    function renderCart() {
+        const container = document.getElementById('cartItems');
+
+        if (cart.length === 0) {
+            container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon"><i class="bi bi-cart-x"></i></div>
+                <div class="empty-state-text">Carrito vacío</div>
+            </div>
+        `;
+            document.getElementById('btnProcessSale').disabled = true;
+            return;
+        }
+
+        container.innerHTML = cart.map(item => `
+        <div class="cart-item">
+            <div class="cart-item-info">
+                <strong>${item.name}</strong><br>
+                <small>S/ ${item.price.toFixed(2)}</small>
+            </div>
+            <div class="cart-item-qty">
+                <button class="qty-btn" onclick="updateQuantity(${item.product_id}, -1)">-</button>
+                <span style="min-width: 30px; text-align: center; font-weight: bold;">${item.quantity}</span>
+                <button class="qty-btn" onclick="updateQuantity(${item.product_id}, 1)">+</button>
+            </div>
+            <strong style="min-width: 60px; text-align: right;">S/ ${item.subtotal.toFixed(2)}</strong>
+            <button class="btn btn-sm btn-danger btn-icon" onclick="removeFromCart(${item.product_id})">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+    `).join('');
+
+        document.getElementById('btnProcessSale').disabled = false;
+    }
+
+    function updateTotals() {
+        const subtotal = cart.reduce((sum, item) => sum + item.subtotal, 0);
+        const total = subtotal;
+        document.getElementById('subtotalDisplay').textContent = `S/ ${subtotal.toFixed(2)}`;
+        document.getElementById('totalDisplay').textContent = `S/ ${total.toFixed(2)}`;
+    }
+
+    function clearCart() {
+        if (cart.length === 0) return;
+
+        App.confirm('¿Limpiar el carrito?', () => {
+            cart = [];
+            renderCart();
+            updateTotals();
+        });
+    }
+
+    async function processSale() {
+        if (cart.length === 0) {
+            App.showToast('El carrito está vacío', 'warning');
+            return;
+        }
+
+        const subtotal = cart.reduce((sum, item) => sum + item.subtotal, 0);
+        const total = subtotal;
+
+        const saleData = {
+            items: cart,
+            subtotal: subtotal,
+            discount: 0,
+            tax: 0,
+            total: total,
+            payment_method: document.getElementById('paymentMethod').value
+        };
+
+        if (document.getElementById('isNewCustomer').checked) {
+            const name = document.getElementById('newCustomerName').value.trim();
+            if (!name) {
+                App.showToast('Ingresa el nombre del cliente', 'warning');
+                return;
+            }
+            saleData.new_customer = {
+                dni: document.getElementById('newCustomerDni').value.trim(),
+                name,
+                phone: document.getElementById('newCustomerPhone').value.trim(),
+                email: document.getElementById('newCustomerEmail').value.trim(),
+                address: document.getElementById('newCustomerAddress').value.trim(),
+            };
+        } else {
+            const cid = document.getElementById('customerSelect').value;
+            if (cid) saleData.customer_id = cid;
+        }
+
+        const btn = document.getElementById('btnProcessSale');
+        App.showLoading(btn);
+
+        try {
+            const response = await fetch('{% url "sales:process_sale" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify(saleData)
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                App.showToast('Venta registrada: ' + data.sale_code, 'success');
+                if (data.invoice_png_url) {
+                    lastInvoicePngUrl = data.invoice_png_url;
+                    try {
+                        const a = document.createElement('a');
+                        a.href = data.invoice_png_url;
+                        a.download = data.sale_code + '.png';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        document.getElementById('btnShareWhatsApp').style.display = 'block';
+                    } catch (e) {}
+                }
+                clearCart();
+                setTimeout(() => {
+                    window.location.href = '{% url "sales:sale_list" %}';
+                }, 1500);
+            } else {
+                App.showToast('Error: ' + data.error, 'error');
+            }
+        } catch (error) {
+            App.showToast('Error al procesar la venta', 'error');
+            console.error(error);
+        } finally {
+            App.hideLoading(btn);
+        }
+    }
+
+    // Product search
+    document.getElementById('productSearch').addEventListener('input', function () {
+        const search = this.value.toLowerCase();
+        const products = document.querySelectorAll('.product-card');
+
+        products.forEach(product => {
+            const text = product.textContent.toLowerCase();
+            product.style.display = text.includes(search) ? 'block' : 'none';
+        });
+    });
+</script>
+{% endblock %}
+    async function shareInvoicePNG() {
+        if (!lastInvoicePngUrl) {
+            App.showToast('No hay factura PNG disponible', 'warning');
+            return;
+        }
+        try {
+            const res = await fetch(lastInvoicePngUrl);
+            const blob = await res.blob();
+            const file = new File([blob], 'factura.png', { type: 'image/png' });
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({ files: [file], title: 'Factura' });
+            } else {
+                window.open('https://wa.me/?text=', '_blank');
+                App.showToast('Adjunta el PNG descargado en WhatsApp', 'info');
+            }
+        } catch (e) {
+            App.showToast('No se pudo compartir la factura', 'error');
+        }
+    }

@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - AGROTECNICA MIJAEL{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<!-- Stats Grid -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-card-icon">
+            <i class="bi bi-cash-coin"></i>
+        </div>
+        <div class="stat-card-value">S/ {{ today_sales|floatformat:2 }}</div>
+        <div class="stat-card-label">Ventas Hoy</div>
+        <small class="text-muted">{{ today_count }} ventas</small>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-icon" style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);">
+            <i class="bi bi-calendar-month"></i>
+        </div>
+        <div class="stat-card-value">S/ {{ month_sales|floatformat:2 }}</div>
+        <div class="stat-card-label">Mes Actual</div>
+        <small class="text-muted">{{ month_count }} ventas</small>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-icon" style="background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);">
+            <i class="bi bi-exclamation-triangle"></i>
+        </div>
+        <div class="stat-card-value">{{ low_stock }}</div>
+        <div class="stat-card-label">Stock Bajo</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-icon" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);">
+            <i class="bi bi-clock-history"></i>
+        </div>
+        <div class="stat-card-value">{{ expiring_soon }}</div>
+        <div class="stat-card-label">Por Vencer</div>
+    </div>
+</div>
+
+<!-- Top Products -->
+{% if top_products %}
+<div class="card mb-lg">
+    <div class="card-header">
+        <i class="bi bi-trophy"></i> Productos Más Vendidos (Este Mes)
+    </div>
+    <div class="list-group">
+        {% for product in top_products %}
+        <div class="list-item">
+            <div class="list-item-icon" style="background-color: var(--primary-light);">
+                <i class="bi bi-box"></i>
+            </div>
+            <div class="list-item-content">
+                <div class="list-item-title">{{ product.name }}</div>
+                <div class="list-item-subtitle">{{ product.category.name }}</div>
+            </div>
+            <div class="list-item-action">
+                <span class="badge badge-success">{{ product.total_sold }} vendidos</span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Recent Sales -->
+<div class="card">
+    <div class="card-header">
+        <i class="bi bi-receipt"></i> Ventas Recientes
+    </div>
+    <div class="list-group">
+        {% for sale in recent_sales %}
+        <a href="{% url 'sales:sale_detail' sale.pk %}" class="list-item">
+            <div class="list-item-icon" style="background-color: var(--info);">
+                <i class="bi bi-receipt-cutoff"></i>
+            </div>
+            <div class="list-item-content">
+                <div class="list-item-title">{{ sale.code }}</div>
+                <div class="list-item-subtitle">
+                    {{ sale.customer.name|default:"Cliente General" }} • {{ sale.created_at|date:"d/m/Y H:i" }}
+                </div>
+            </div>
+            <div class="list-item-action">
+                <strong class="text-primary">S/ {{ sale.total }}</strong>
+            </div>
+        </a>
+        {% empty %}
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="bi bi-inbox"></i>
+            </div>
+            <div class="empty-state-title">No hay ventas aún</div>
+            <div class="empty-state-text">Las ventas aparecerán aquí</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Quick Actions FAB -->
+<a href="{% url 'sales:pos' %}" class="fab">
+    <i class="bi bi-cart-plus"></i>
+</a>
+{% endblock %}

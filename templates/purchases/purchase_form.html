@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Nueva Compra - AGROTECNICA MIJAEL{% endblock %}
+{% block page_title %}Nueva Compra{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <i class="bi bi-bag-plus"></i> Registrar Compra
+    </div>
+    <div class="card-body">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {% for field in form %}
+            <div class="form-group">
+                <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {% if field.name == 'invoice_photo' %}
+                <input type="file" name="{{ field.name }}" id="{{ field.id_for_label }}" class="form-control" accept="image/*" capture="environment">
+                {% else %}
+                {{ field }}
+                {% endif %}
+                {% if field.errors %}
+                <div class="text-danger mt-sm">{{ field.errors }}</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+            <div class="d-flex gap-sm mt-lg">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="bi bi-check-circle"></i> Guardar
+                </button>
+                <a href="{% url 'purchases:purchase_list' %}" class="btn btn-outline btn-lg">
+                    <i class="bi bi-x-circle"></i> Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+    </div>
+{% endblock %}
+

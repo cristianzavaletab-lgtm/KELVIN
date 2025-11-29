@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Venta {{ sale.code }} - AGROTECNICA MIJAEL{% endblock %}
+{% block page_title %}{{ sale.code }}{% endblock %}
+
+{% block content %}
+<div class="card mb-lg">
+    <div class="card-header">
+        <i class="bi bi-receipt"></i> Información de Venta
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-6">
+                <strong>Código:</strong><br>
+                {{ sale.code }}
+            </div>
+            <div class="col-6">
+                <strong>Fecha:</strong><br>
+                {{ sale.created_at|date:"d/m/Y H:i" }}
+            </div>
+        </div>
+        <div class="row mt-md">
+            <div class="col-6">
+                <strong>Cliente:</strong><br>
+                {{ sale.customer.name|default:"Cliente General" }}
+            </div>
+            <div class="col-6">
+                <strong>Vendedor:</strong><br>
+                {{ sale.seller.get_full_name }}
+            </div>
+        </div>
+        <div class="row mt-md">
+            <div class="col-6">
+                <strong>Método de Pago:</strong><br>
+                <span class="badge badge-info">{{ sale.get_payment_method_display }}</span>
+            </div>
+            <div class="col-6">
+                <strong>Estado:</strong><br>
+                <span class="badge badge-success">{{ sale.get_status_display }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-lg">
+    <div class="card-header">
+        <i class="bi bi-list-ul"></i> Productos
+    </div>
+    <div class="list-group">
+        {% for item in sale.items.all %}
+        <div class="list-item">
+            <div class="list-item-content">
+                <div class="list-item-title">{{ item.product.name }}</div>
+                <div class="list-item-subtitle">
+                    {{ item.quantity }} x S/ {{ item.unit_price }}
+                </div>
+            </div>
+            <div class="list-item-action">
+                <strong>S/ {{ item.subtotal }}</strong>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="total-row">
+            <span>Subtotal:</span>
+            <strong>S/ {{ sale.subtotal }}</strong>
+        </div>
+        <div class="total-row">
+            <span>Descuento:</span>
+            <strong>S/ {{ sale.discount }}</strong>
+        </div>
+        <div class="total-row">
+            <span>IGV (18%):</span>
+            <strong>S/ {{ sale.tax }}</strong>
+        </div>
+        <div class="total-row"
+            style="font-size: var(--font-size-xl); color: var(--primary); border-top: 2px solid var(--gray-light); padding-top: var(--space-md); margin-top: var(--space-md);">
+            <span>TOTAL:</span>
+            <strong>S/ {{ sale.total }}</strong>
+        </div>
+    </div>
+</div>
+
+<div class="mt-lg">
+    <a href="{% url 'sales:sale_list' %}" class="btn btn-outline btn-block">
+        <i class="bi bi-arrow-left"></i> Volver a Ventas
+    </a>
+</div>
+{% endblock %}

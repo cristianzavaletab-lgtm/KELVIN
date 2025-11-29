@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Compras - AGROTECNICA MIJAEL{% endblock %}
+{% block page_title %}Compras{% endblock %}
+
+{% block app_bar_action %}
+<a href="{% url 'purchases:purchase_create' %}" class="app-bar-icon">
+    <i class="bi bi-bag-plus"></i>
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="list-group">
+    {% for purchase in purchases %}
+    <div class="list-item">
+        <div class="list-item-icon" style="background-color: var(--warning);">
+            <i class="bi bi-bag"></i>
+        </div>
+        <div class="list-item-content">
+            <div class="list-item-title">{{ purchase.code }}</div>
+            <div class="list-item-subtitle">
+                {{ purchase.supplier.name }} • {{ purchase.created_at|date:"d/m/Y H:i" }}
+            </div>
+        </div>
+        <div class="list-item-action">
+            <strong class="text-primary">S/ {{ purchase.total }}</strong>
+        </div>
+    </div>
+    {% empty %}
+    <div class="empty-state">
+        <div class="empty-state-icon"><i class="bi bi-inbox"></i></div>
+        <div class="empty-state-title">No hay compras registradas</div>
+        <div class="empty-state-text">Las compras aparecerán aquí</div>
+        <a href="{% url 'purchases:purchase_create' %}" class="btn btn-primary mt-lg">
+            <i class="bi bi-bag-plus"></i> Nueva Compra
+        </a>
+    </div>
+    {% endfor %}
+</div>
+
+{% if is_paginated %}
+<div class="d-flex justify-content-center gap-sm mt-lg">
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}" class="btn btn-outline btn-sm">Anterior</a>
+    {% endif %}
+    <span class="btn btn-sm" style="background: var(--gray-light);">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}" class="btn btn-outline btn-sm">Siguiente</a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+

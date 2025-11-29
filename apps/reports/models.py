@@ -1,0 +1,6 @@
+"""
+Reports app doesn't need models - uses data from other apps
+"""
+from django.db import models
+
+# No models needed - this app aggregates data from other apps

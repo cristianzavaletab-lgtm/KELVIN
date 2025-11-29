@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Proveedores - AGROTECNICA MIJAEL{% endblock %}
+{% block page_title %}Proveedores{% endblock %}
+
+{% block app_bar_action %}
+<a href="{% url 'suppliers:supplier_create' %}" class="app-bar-icon">
+    <i class="bi bi-truck"></i>
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="list-group">
+    {% for supplier in suppliers %}
+    <div class="list-item">
+        <div class="list-item-icon" style="background-color: var(--info);">
+            <i class="bi bi-truck"></i>
+        </div>
+        <div class="list-item-content">
+            <div class="list-item-title">{{ supplier.name }}</div>
+            <div class="list-item-subtitle">RUC: {{ supplier.ruc }}</div>
+        </div>
+        <div class="list-item-action" style="display:flex; gap: var(--space-sm); align-items:center;">
+            <span class="badge">{{ supplier.phone|default:"" }}</span>
+            <a href="{% url 'suppliers:supplier_edit' supplier.pk %}" class="btn btn-outline btn-sm btn-icon" title="Editar">
+                <i class="bi bi-pencil"></i>
+            </a>
+            <a href="{% url 'suppliers:supplier_delete' supplier.pk %}" class="btn btn-danger btn-sm btn-icon" title="Eliminar">
+                <i class="bi bi-trash"></i>
+            </a>
+        </div>
+    </div>
+    {% empty %}
+    <div class="empty-state">
+        <div class="empty-state-icon"><i class="bi bi-inbox"></i></div>
+        <div class="empty-state-title">No hay proveedores</div>
+        <div class="empty-state-text">Agrega tu primer proveedor</div>
+        <a href="{% url 'suppliers:supplier_create' %}" class="btn btn-primary mt-lg">
+            <i class="bi bi-truck"></i> Nuevo Proveedor
+        </a>
+    </div>
+    {% endfor %}
+</div>
+
+{% if is_paginated %}
+<div class="d-flex justify-content-center gap-sm mt-lg">
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}" class="btn btn-outline btn-sm">Anterior</a>
+    {% endif %}
+    <span class="btn btn-sm" style="background: var(--gray-light);">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}" class="btn btn-outline btn-sm">Siguiente</a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

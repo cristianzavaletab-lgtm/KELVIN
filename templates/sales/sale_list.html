@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Ventas - AGROTECNICA MIJAEL{% endblock %}
+{% block page_title %}Historial de Ventas{% endblock %}
+
+{% block app_bar_action %}
+<a href="{% url 'sales:pos' %}" class="app-bar-icon">
+    <i class="bi bi-cart-plus"></i>
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="list-group">
+    {% for sale in sales %}
+    <a href="{% url 'sales:sale_detail' sale.pk %}" class="list-item">
+        <div class="list-item-icon" style="background-color: var(--success);">
+            <i class="bi bi-receipt-cutoff"></i>
+        </div>
+        <div class="list-item-content">
+            <div class="list-item-title">{{ sale.code }}</div>
+            <div class="list-item-subtitle">
+                {{ sale.customer.name|default:"Cliente General" }} •
+                {{ sale.created_at|date:"d/m/Y H:i" }}
+                <br>
+                <span class="badge badge-{{ sale.status|lower }}">{{ sale.get_status_display }}</span>
+                <span class="badge badge-info">{{ sale.get_payment_method_display }}</span>
+            </div>
+        </div>
+        <div class="list-item-action">
+            <strong class="text-primary">S/ {{ sale.total }}</strong>
+        </div>
+    </a>
+    {% empty %}
+    <div class="empty-state">
+        <div class="empty-state-icon">
+            <i class="bi bi-inbox"></i>
+        </div>
+        <div class="empty-state-title">No hay ventas registradas</div>
+        <div class="empty-state-text">Las ventas aparecerán aquí</div>
+        <a href="{% url 'sales:pos' %}" class="btn btn-primary mt-lg">
+            <i class="bi bi-cart-plus"></i> Nueva Venta
+        </a>
+    </div>
+    {% endfor %}
+</div>
+
+{% if is_paginated %}
+<div class="d-flex justify-content-center gap-sm mt-lg">
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}" class="btn btn-outline btn-sm">Anterior</a>
+    {% endif %}
+    <span class="btn btn-sm" style="background: var(--gray-light);">
+        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+    </span>
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}" class="btn btn-outline btn-sm">Siguiente</a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Reportes - AGROTECNICA MIJAEL{% endblock %}
+{% block page_title %}Reportes{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="card mb-lg">
+    <div class="card-header">
+        <i class="bi bi-funnel"></i> Filtros por fecha
+    </div>
+    <div class="card-body">
+        <form method="get">
+            <div class="row">
+                <div class="col-6">
+                    <label class="form-label">Desde</label>
+                    <input type="date" name="start" class="form-control" value="{{ request.GET.start }}">
+                </div>
+                <div class="col-6">
+                    <label class="form-label">Hasta</label>
+                    <input type="date" name="end" class="form-control" value="{{ request.GET.end }}">
+                </div>
+            </div>
+            <div class="mt-lg">
+                <button class="btn btn-primary"><i class="bi bi-search"></i> Aplicar</button>
+            </div>
+        </form>
+    </div>
+ </div>
+
+<div class="card mb-lg">
+    <div class="card-header"><i class="bi bi-graph-up"></i> Ventas por Día</div>
+    <div class="card-body"><canvas id="chartDaily" height="120"></canvas></div>
+ </div>
+
+<div class="card mb-lg">
+    <div class="card-header"><i class="bi bi-calendar3"></i> Ventas por Mes</div>
+    <div class="card-body"><canvas id="chartMonthly" height="120"></canvas></div>
+ </div>
+
+<div class="card mb-lg">
+    <div class="card-header"><i class="bi bi-trophy"></i> Top Productos</div>
+    <div class="list-group">
+        {% for p in top_products %}
+        <div class="list-item">
+            <div class="list-item-icon"><i class="bi bi-box"></i></div>
+            <div class="list-item-content">
+                <div class="list-item-title">{{ p.name }}</div>
+                <div class="list-item-subtitle">{{ p.category.name }}</div>
+            </div>
+            <div class="list-item-action"><span class="badge badge-success">{{ p.total_sold }} vendidos</span></div>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <div class="empty-state-icon"><i class="bi bi-inbox"></i></div>
+            <div class="empty-state-title">Sin datos</div>
+        </div>
+        {% endfor %}
+    </div>
+ </div>
+
+<div class="card mb-lg">
+    <div class="card-header"><i class="bi bi-people"></i> Clientes Frecuentes</div>
+    <div class="list-group">
+        {% for c in frequent_customers %}
+        <div class="list-item">
+            <div class="list-item-icon"><i class="bi bi-person"></i></div>
+            <div class="list-item-content">
+                <div class="list-item-title">{{ c.name }}</div>
+            </div>
+            <div class="list-item-action"><span class="badge">{{ c.count }} compras</span></div>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <div class="empty-state-icon"><i class="bi bi-inbox"></i></div>
+            <div class="empty-state-title">Sin datos</div>
+        </div>
+        {% endfor %}
+    </div>
+ </div>
+
+<div class="card">
+    <div class="card-header"><i class="bi bi-truck"></i> Compras por Proveedor</div>
+    <div class="list-group">
+        {% for s in purchases_by_supplier %}
+        <div class="list-item">
+            <div class="list-item-content">
+                <div class="list-item-title">{{ s.supplier__name }}</div>
+                <div class="list-item-subtitle">{{ s.count }} compras</div>
+            </div>
+            <div class="list-item-action"><strong class="text-primary">S/ {{ s.total|floatformat:2 }}</strong></div>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <div class="empty-state-icon"><i class="bi bi-inbox"></i></div>
+            <div class="empty-state-title">Sin datos</div>
+        </div>
+        {% endfor %}
+    </div>
+ </div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const dailyLabels = {{ daily_sales|map(attribute='created_at__date')|safe }};
+    const dailyValues = {{ daily_sales|map(attribute='total')|safe }};
+    const monthlyLabels = {{ monthly_sales|map(attribute='created_at__month')|safe }};
+    const monthlyValues = {{ monthly_sales|map(attribute='total')|safe }};
+    if (document.getElementById('chartDaily')) {
+        new Chart(document.getElementById('chartDaily'), {type:'line', data:{labels: dailyLabels, datasets:[{label:'Ventas', data: dailyValues, borderColor: '#00A9FF'}]}});
+    }
+    if (document.getElementById('chartMonthly')) {
+        new Chart(document.getElementById('chartMonthly'), {type:'bar', data:{labels: monthlyLabels, datasets:[{label:'Ventas', data: monthlyValues, backgroundColor: '#4E9F3D'}]}});
+    }
+</script>
+{% endblock %}
+
