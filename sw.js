@@ -3,7 +3,7 @@
  * Provides offline support and caching
  */
 
-const CACHE_NAME = 'agrotecnica-v1';
+const CACHE_NAME = 'kelvin-v1';
 const urlsToCache = [
     '/',
     '/static/css/base.css',

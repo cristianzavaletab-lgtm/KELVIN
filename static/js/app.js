@@ -15,7 +15,7 @@ const App = {
     this.initForms();
     this.initToasts();
     this.initLogout();
-    console.log('🚀 AGROTECNICA MIJAEL App Initialized');
+    console.log('🚀 Kelvin Repuestos App Initialized');
   },
   
   // Drawer Navigation

@@ -17,7 +17,7 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-dev-key-change-in-pro
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=Csv())
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,kelvin-7tkh.onrender.com,.onrender.com', cast=Csv())
 
 # Application definition
 INSTALLED_APPS = [
@@ -204,7 +204,7 @@ if not DEBUG:
     # CSRF trusted origins for production
     CSRF_TRUSTED_ORIGINS = config(
         'CSRF_TRUSTED_ORIGINS',
-        default='https://*.onrender.com',
+        default='https://kelvin-7tkh.onrender.com,https://*.onrender.com',
         cast=lambda v: [s.strip() for s in v.split(',')]
     )
 

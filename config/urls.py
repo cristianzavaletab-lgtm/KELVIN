@@ -26,6 +26,6 @@ if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 # Admin site customization
-admin.site.site_header = "AGROTECNICA MIJAEL"
+admin.site.site_header = "Kelvin Repuestos"
 admin.site.site_title = "Administración"
 admin.site.index_title = "Panel de Administración"
