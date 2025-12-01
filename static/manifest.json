@@ -1,11 +1,11 @@
 {
-  "name": "AGROTECNICA MIJAEL",
-  "short_name": "AGRO",
-  "description": "Sistema de Gestión Agropecuaria Mobile-First",
+  "name": "Kelvin Repuestos",
+  "short_name": "Kelvin",
+  "description": "Sistema de Gestión de Repuestos – Compra y Venta",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#2ecc71",
-  "theme_color": "#2ecc71",
+  "background_color": "#2B4C7E",
+  "theme_color": "#2B4C7E",
   "orientation": "portrait",
   "icons": [
     {

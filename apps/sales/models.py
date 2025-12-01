@@ -188,3 +188,85 @@ class SaleItem(models.Model):
     def save(self, *args, **kwargs):
         self.subtotal = self.quantity * self.unit_price
         super().save(*args, **kwargs)
+
+
+class Reservation(models.Model):
+    class Status(models.TextChoices):
+        RESERVED = 'RESERVED', 'Reservado'
+        FULFILLED = 'FULFILLED', 'Cumplido'
+        CANCELED = 'CANCELED', 'Cancelado'
+
+    product = models.ForeignKey(
+        'products.Product',
+        on_delete=models.PROTECT,
+        related_name='reservations',
+        verbose_name='Producto'
+    )
+
+    customer = models.ForeignKey(
+        'customers.Customer',
+        on_delete=models.PROTECT,
+        related_name='reservations',
+        null=True,
+        blank=True,
+        verbose_name='Cliente'
+    )
+
+    quantity = models.IntegerField(
+        validators=[MinValueValidator(1)],
+        verbose_name='Cantidad'
+    )
+
+    status = models.CharField(
+        max_length=10,
+        choices=Status.choices,
+        default=Status.RESERVED,
+        verbose_name='Estado'
+    )
+
+    expires_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Expira'
+    )
+
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name='reservations',
+        verbose_name='Registrado por'
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Creado')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Actualizado')
+
+    class Meta:
+        verbose_name = 'Reserva'
+        verbose_name_plural = 'Reservas'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.product.code} x {self.quantity} ({self.get_status_display()})"
+
+    def save(self, *args, **kwargs):
+        delta = 0
+        if self.pk:
+            old = Reservation.objects.get(pk=self.pk)
+            old_reserved = old.quantity if old.status == Reservation.Status.RESERVED else 0
+            new_reserved = self.quantity if self.status == Reservation.Status.RESERVED else 0
+            delta = new_reserved - old_reserved
+        else:
+            if self.status == Reservation.Status.RESERVED:
+                delta = self.quantity
+        super().save(*args, **kwargs)
+        if delta != 0:
+            p = self.product
+            p.reserved_stock = max(0, p.reserved_stock + delta)
+            p.save()
+
+    def delete(self, using=None, keep_parents=False):
+        if self.status == Reservation.Status.RESERVED:
+            p = self.product
+            p.reserved_stock = max(0, p.reserved_stock - self.quantity)
+            p.save()
+        return super().delete(using=using, keep_parents=keep_parents)

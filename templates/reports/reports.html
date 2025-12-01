@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Reportes - AGROTECNICA MIJAEL{% endblock %}
+{% block title %}Reportes - Kelvin Repuestos{% endblock %}
 {% block page_title %}Reportes{% endblock %}
 
 {% block extra_css %}
@@ -25,22 +25,28 @@
                     <input type="date" name="end" class="form-control" value="{{ request.GET.end }}">
                 </div>
             </div>
-            <div class="mt-lg">
+            <div class="mt-lg d-flex gap-sm">
                 <button class="btn btn-primary"><i class="bi bi-search"></i> Aplicar</button>
+                <a href="?{{ request.GET.urlencode }}&export=excel" class="btn btn-success" target="_blank">
+                    <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+                </a>
+                <button type="button" class="btn btn-secondary" onclick="window.print()">
+                    <i class="bi bi-printer"></i> Imprimir / PDF
+                </button>
             </div>
         </form>
     </div>
- </div>
+</div>
 
 <div class="card mb-lg">
     <div class="card-header"><i class="bi bi-graph-up"></i> Ventas por Día</div>
     <div class="card-body"><canvas id="chartDaily" height="120"></canvas></div>
- </div>
+</div>
 
 <div class="card mb-lg">
     <div class="card-header"><i class="bi bi-calendar3"></i> Ventas por Mes</div>
     <div class="card-body"><canvas id="chartMonthly" height="120"></canvas></div>
- </div>
+</div>
 
 <div class="card mb-lg">
     <div class="card-header"><i class="bi bi-trophy"></i> Top Productos</div>
@@ -61,7 +67,7 @@
         </div>
         {% endfor %}
     </div>
- </div>
+</div>
 
 <div class="card mb-lg">
     <div class="card-header"><i class="bi bi-people"></i> Clientes Frecuentes</div>
@@ -81,7 +87,7 @@
         </div>
         {% endfor %}
     </div>
- </div>
+</div>
 
 <div class="card">
     <div class="card-header"><i class="bi bi-truck"></i> Compras por Proveedor</div>
@@ -101,22 +107,41 @@
         </div>
         {% endfor %}
     </div>
- </div>
+</div>
 
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    const dailyLabels = {{ daily_sales|map(attribute='created_at__date')|safe }};
-    const dailyValues = {{ daily_sales|map(attribute='total')|safe }};
-    const monthlyLabels = {{ monthly_sales|map(attribute='created_at__month')|safe }};
-    const monthlyValues = {{ monthly_sales|map(attribute='total')|safe }};
+    const dailyData = JSON.parse('{{ chart_daily_json|escapejs }}');
+    const monthlyData = JSON.parse('{{ chart_monthly_json|escapejs }}');
+
     if (document.getElementById('chartDaily')) {
-        new Chart(document.getElementById('chartDaily'), {type:'line', data:{labels: dailyLabels, datasets:[{label:'Ventas', data: dailyValues, borderColor: '#00A9FF'}]}});
+        new Chart(document.getElementById('chartDaily'), {
+            type: 'line',
+            data: {
+                labels: dailyData.labels,
+                datasets: [{
+                    label: 'Ventas',
+                    data: dailyData.values,
+                    borderColor: '#00A9FF',
+                    tension: 0.1
+                }]
+            }
+        });
     }
     if (document.getElementById('chartMonthly')) {
-        new Chart(document.getElementById('chartMonthly'), {type:'bar', data:{labels: monthlyLabels, datasets:[{label:'Ventas', data: monthlyValues, backgroundColor: '#4E9F3D'}]}});
+        new Chart(document.getElementById('chartMonthly'), {
+            type: 'bar',
+            data: {
+                labels: monthlyData.labels,
+                datasets: [{
+                    label: 'Ventas',
+                    data: monthlyData.values,
+                    backgroundColor: '#4E9F3D'
+                }]
+            }
+        });
     }
 </script>
 {% endblock %}
-

@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Dashboard - AGROTECNICA MIJAEL{% endblock %}
+{% block title %}Dashboard - Kelvin Repuestos{% endblock %}
 {% block page_title %}Dashboard{% endblock %}
 
 {% block extra_css %}
@@ -43,6 +43,95 @@
         </div>
         <div class="stat-card-value">{{ expiring_soon }}</div>
         <div class="stat-card-label">Por Vencer</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-icon" style="background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);">
+            <i class="bi bi-archive"></i>
+        </div>
+        <div class="stat-card-value">{{ dead_stock }}</div>
+        <div class="stat-card-label">Sin Movimiento (30d)</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-icon" style="background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);">
+            <i class="bi bi-bookmark"></i>
+        </div>
+        <div class="stat-card-value">{{ reservations_active }}</div>
+        <div class="stat-card-label">Reservas Activas</div>
+    </div>
+</div>
+
+{% if out_of_stock_products %}
+<div class="card mb-lg">
+    <div class="card-header">
+        <i class="bi bi-x-octagon"></i> Productos Agotados
+    </div>
+    <div class="list-group">
+        {% for p in out_of_stock_products %}
+        <div class="list-item">
+            <div class="list-item-icon" style="background-color: var(--danger);">
+                <i class="bi bi-exclamation-octagon"></i>
+            </div>
+            <div class="list-item-content">
+                <div class="list-item-title">{{ p.name }}</div>
+                <div class="list-item-subtitle">{{ p.category.name }} • Código {{ p.code }}</div>
+            </div>
+            <div class="list-item-action" style="display:flex; gap: var(--space-sm); align-items:center;">
+                <span class="badge badge-danger">AGOTADO</span>
+                <button class="btn btn-success btn-sm" onclick="sendStockAlert('{{ p.name|escapejs }}','{{ p.code|escapejs }}','AGOTADO','{{ admin_phone }}')">
+                    <i class="bi bi-whatsapp"></i>
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <div class="card-body">
+        <button class="btn btn-success btn-block" onclick="sendSummaryAlert('AGOTADO')">
+            <i class="bi bi-whatsapp"></i> Enviar alerta general
+        </button>
+    </div>
+</div>
+{% endif %}
+
+{% if low_stock_products %}
+<div class="card mb-lg">
+    <div class="card-header">
+        <i class="bi bi-exclamation-triangle"></i> Productos en Stock Crítico
+    </div>
+    <div class="list-group">
+        {% for p in low_stock_products %}
+        <div class="list-item">
+            <div class="list-item-icon" style="background-color: var(--warning);">
+                <i class="bi bi-triangle"></i>
+            </div>
+            <div class="list-item-content">
+                <div class="list-item-title">{{ p.name }}</div>
+                <div class="list-item-subtitle">{{ p.category.name }} • Código {{ p.code }}</div>
+            </div>
+            <div class="list-item-action" style="display:flex; gap: var(--space-sm); align-items:center;">
+                <span class="badge badge-warning">{{ p.available }}/min {{ p.min_stock }}</span>
+                <button class="btn btn-success btn-sm" onclick="sendStockAlert('{{ p.name|escapejs }}','{{ p.code|escapejs }}','STOCK_BAJO','{{ admin_phone }}','{{ p.stock }}','{{ p.min_stock }}')">
+                    <i class="bi bi-whatsapp"></i>
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <div class="card-body">
+        <button class="btn btn-success btn-block" onclick="sendSummaryAlert('STOCK_BAJO')">
+            <i class="bi bi-whatsapp"></i> Enviar alerta general
+        </button>
+    </div>
+</div>
+{% endif %}
+
+<div class="card mb-lg">
+    <div class="card-body">
+        <form method="post" action="{% url 'reports:generate_suggested_orders' %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primary btn-block">
+                <i class="bi bi-clipboard-plus"></i> Generar pedidos sugeridos
+            </button>
+        </form>
     </div>
 </div>
 
@@ -109,3 +198,53 @@
     <i class="bi bi-cart-plus"></i>
 </a>
 {% endblock %}
+
+{% block extra_js %}
+<script>
+function buildWaLink(text, phone) {
+    const encoded = encodeURIComponent(text);
+    const digits = (phone || '').replace(/[^0-9]/g, '');
+    if (digits) return `https://wa.me/${digits}?text=${encoded}`;
+    return `https://wa.me/?text=${encoded}`;
+}
+
+function sendStockAlert(name, code, type, phone, stock, minStock) {
+    let tpl = type === 'AGOTADO' ? `{{ wa_tpl_out_of_stock|escapejs }}` : `{{ wa_tpl_low_stock|escapejs }}`;
+    tpl = tpl.replace(/\{\{name\}\}/g, name)
+             .replace(/\{\{code\}\}/g, code)
+             .replace(/\{\{stock\}\}/g, String(stock||''))
+             .replace(/\{\{min_stock\}\}/g, String(minStock||''));
+    const text = tpl;
+    const url = buildWaLink(text, phone);
+    window.open(url, '_blank');
+}
+
+function sendSummaryAlert(type) {
+    let header = type === 'AGOTADO' ? 'Resumen de productos agotados' : 'Resumen de productos con stock bajo';
+    let items = [];
+    {% if out_of_stock_products and low_stock_products %}
+    const list = type === 'AGOTADO' ? [{% for p in out_of_stock_products %}'{{ p.name|escapejs }} ({{ p.code|escapejs }})'{% if not forloop.last %},{% endif %}{% endfor %}] : [{% for p in low_stock_products %}'{{ p.name|escapejs }} ({{ p.code|escapejs }}) {{ p.available }}/min {{ p.min_stock }}'{% if not forloop.last %},{% endif %}{% endfor %}];
+    items = list;
+    {% elif out_of_stock_products %}
+    if (type === 'AGOTADO') items = [{% for p in out_of_stock_products %}'{{ p.name|escapejs }} ({{ p.code|escapejs }})'{% if not forloop.last %},{% endif %}{% endfor %}];
+    {% elif low_stock_products %}
+    if (type === 'STOCK_BAJO') items = [{% for p in low_stock_products %}'{{ p.name|escapejs }} ({{ p.code|escapejs }}) {{ p.available }}/min {{ p.min_stock }}'{% if not forloop.last %},{% endif %}{% endfor %}];
+    {% endif %}
+    const text = `${header}\n\n` + items.map(i => `- ${i}`).join('\n');
+    const url = buildWaLink(text, '{{ admin_phone }}');
+    window.open(url, '_blank');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    {% if out_of_stock_products %}
+    if (window.App) App.showToast('Hay productos agotados', 'warning');
+    {% endif %}
+    {% if low_stock_products %}
+    if (window.App) App.showToast('Hay productos con stock bajo', 'info');
+    {% endif %}
+});
+</script>
+{% endblock %}
+
+
+

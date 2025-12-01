@@ -49,8 +49,13 @@ class Product(models.Model):
     code = models.CharField(
         max_length=20,
         unique=True,
-        editable=False,
+        blank=True,
         verbose_name='Código'
+    )
+    
+    description = models.TextField(
+        blank=True,
+        verbose_name='Descripción'
     )
     
     name = models.CharField(
@@ -89,6 +94,12 @@ class Product(models.Model):
         default=0,
         validators=[MinValueValidator(0)],
         verbose_name='Stock actual'
+    )
+    
+    reserved_stock = models.IntegerField(
+        default=0,
+        validators=[MinValueValidator(0)],
+        verbose_name='Stock reservado'
     )
     
     min_stock = models.IntegerField(
@@ -163,7 +174,7 @@ class Product(models.Model):
     @property
     def is_low_stock(self):
         """Check if stock is below minimum"""
-        return self.stock <= self.min_stock
+        return (self.stock - self.reserved_stock) <= self.min_stock
     
     @property
     def is_expiring_soon(self):
@@ -179,3 +190,9 @@ class Product(models.Model):
         if self.expiration_date:
             return self.expiration_date < timezone.now().date()
         return False
+    
+    @property
+    def available_stock(self):
+        """Stock disponible (stock - reservado)"""
+        avail = self.stock - self.reserved_stock
+        return avail if avail > 0 else 0

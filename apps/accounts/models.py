@@ -52,3 +52,26 @@ class User(AbstractUser):
     @property
     def is_vendedor(self):
         return self.role == self.Role.VENDEDOR
+
+
+class WhatsAppTemplate(models.Model):
+    """Editable WhatsApp templates"""
+    key = models.CharField(max_length=50, unique=True, verbose_name='Clave')
+    content = models.TextField(verbose_name='Contenido')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Actualizado')
+
+    class Meta:
+        verbose_name = 'Plantilla WhatsApp'
+        verbose_name_plural = 'Plantillas WhatsApp'
+        ordering = ['key']
+
+    def __str__(self):
+        return self.key
+
+    @staticmethod
+    def get_content(key, default):
+        try:
+            tpl = WhatsAppTemplate.objects.get(key=key)
+            return tpl.content or default
+        except WhatsAppTemplate.DoesNotExist:
+            return default

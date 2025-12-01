@@ -11,6 +11,7 @@ class AccountsConfig(AppConfig):
             from django.contrib.auth import get_user_model
             from django.db.utils import ProgrammingError, OperationalError
             import os
+            from .models import WhatsAppTemplate
             User = get_user_model()
             # Ensure admin exists and has a password
             email = os.environ.get('DJANGO_SUPERUSER_EMAIL', 'admin@example.com')
@@ -28,6 +29,30 @@ class AccountsConfig(AppConfig):
                 admin.is_staff = True
                 admin.is_superuser = True
                 admin.save()
+            # Ensure default WhatsApp templates exist
+            defaults = {
+                'SALE_MESSAGE': (
+                    'Gracias por su compra\n'
+                    'Venta: {{code}}\n'
+                    'Cliente: {{customer}}\n'
+                    'Productos:\n{{items}}\n'
+                    'TOTAL: S/ {{total}}'
+                ),
+                'ALERT_OUT_OF_STOCK': (
+                    'Producto agotado\n\n'
+                    'Nombre: {{name}}\n'
+                    'Código: {{code}}'
+                ),
+                'ALERT_LOW_STOCK': (
+                    'Producto por debajo del stock mínimo\n\n'
+                    'Nombre: {{name}}\n'
+                    'Código: {{code}}\n'
+                    'Stock: {{stock}}\n'
+                    'Stock mínimo: {{min_stock}}'
+                ),
+            }
+            for key, content in defaults.items():
+                WhatsAppTemplate.objects.get_or_create(key=key, defaults={'content': content})
         except (ProgrammingError, OperationalError):
             # Database not ready during migrations or initial setup
             pass

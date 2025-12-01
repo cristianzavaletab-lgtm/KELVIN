@@ -5,120 +5,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#2ecc71">
-    <title>Login - AGROTECNICA MIJAEL</title>
-
+    <meta name="theme-color" content="#2B4C7E">
+    <title>Iniciar Sesión - Kelvin Repuestos</title>
     <link rel="stylesheet" href="{% static 'css/base.css' %}">
     <link rel="stylesheet" href="{% static 'css/mobile.css' %}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-
     <style>
-        .login-container {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
-            padding: var(--space-lg);
-        }
-
-        .login-card {
-            background: var(--white);
-            border-radius: var(--radius-xl);
-            padding: var(--space-2xl);
-            box-shadow: var(--shadow-xl);
-            width: 100%;
-            max-width: 400px;
-            animation: fadeIn 0.5s ease-in-out;
-        }
-
-        .login-logo {
-            text-align: center;
-            margin-bottom: var(--space-2xl);
-        }
-
-        .login-logo i {
-            font-size: 64px;
-            color: var(--primary);
-            margin-bottom: var(--space-md);
-        }
-
-        .login-logo h1 {
-            font-size: var(--font-size-2xl);
-            color: var(--dark);
-            margin-bottom: var(--space-xs);
-        }
-
-        .login-logo p {
-            color: var(--gray);
-            font-size: var(--font-size-sm);
-            margin: 0;
-        }
-
-        .form-check {
-            display: flex;
-            align-items: center;
-            gap: var(--space-sm);
-            margin-bottom: var(--space-lg);
-        }
-
-        .form-check label {
-            margin: 0;
-            font-weight: normal;
-        }
+        body { margin:0; padding:0; font-family: var(--font-family); }
+        .login-mobile { min-height: 100vh; display:flex; flex-direction: column; align-items:center; justify-content:center; padding: var(--space-lg); background: var(--gradient-primary); }
+        .brand { text-align:center; color: var(--white); margin-bottom: var(--space-lg); }
+        .brand img { height: 56px; display:block; margin: 0 auto var(--space-sm); }
+        .brand h1 { font-size: var(--font-size-2xl); margin:0; }
+        .brand .subtitle { opacity:0.9; }
+        .login-card { width: 100%; max-width: 420px; background: var(--white); border-radius: var(--radius-xl); box-shadow: var(--shadow-xl); padding: var(--space-xl); }
+        .login-header { text-align:center; margin-bottom: var(--space-lg); }
+        .login-header h2 { color: var(--primary); margin:0; font-weight:800; }
+        .form-group { margin-bottom: var(--space-lg); }
+        .form-label { display:flex; align-items:center; gap: var(--space-xs); font-weight:600; color: var(--dark); margin-bottom: var(--space-sm); }
+        .form-label i { color: var(--primary); }
+        .form-control { width:100%; padding: 14px 16px; border: 2px solid var(--gray-light); border-radius: var(--radius-full); font-size: 16px; transition: var(--transition-fast); }
+        .form-control:focus { outline:none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(43,76,126,0.15); }
+        .form-check { display:flex; align-items:center; gap: var(--space-sm); margin-bottom: var(--space-md); }
+        .btn-login { width:100%; padding: 16px; background: var(--gradient-primary); color: var(--white); border:none; border-radius: var(--radius-full); font-size: 16px; font-weight:700; display:flex; align-items:center; justify-content:center; gap: var(--space-sm); box-shadow: var(--shadow-md); }
+        .btn-login:active { transform: scale(0.98); }
+        .alert { padding: var(--space-md); border-radius: var(--radius-lg); margin-bottom: var(--space-lg); display:flex; align-items:center; gap: var(--space-sm); }
+        .alert-danger { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .login-footer { text-align:center; margin-top: var(--space-md); color: var(--gray); }
     </style>
 </head>
 
 <body>
-    <div class="login-container">
+    <div class="login-mobile">
+        <div class="brand">
+            <img src="{% static 'img/logo.svg' %}" alt="Kelvin Repuestos" onerror="this.style.display='none'">
+            <h1>Kelvin Repuestos</h1>
+            <div class="subtitle">Compra–Venta de Repuestos</div>
+        </div>
         <div class="login-card">
-            <div class="login-logo">
-                <i class="bi bi-shop"></i>
-                <h1>AGROTECNICA</h1>
-                <p>Sistema de Gestión</p>
-            </div>
-
-            {% if form.errors %}
-            <div class="alert alert-danger">
-                <i class="bi bi-exclamation-triangle"></i>
-                Usuario o contraseña incorrectos
-            </div>
-            {% endif %}
-
-            <form method="post" action="{% url 'accounts:login' %}">
-                {% csrf_token %}
-
-                <div class="form-group">
-                    <label class="form-label">
-                        <i class="bi bi-person"></i> Usuario
-                    </label>
-                    {{ form.username }}
+                <div class="login-header">
+                    <h2>Bienvenido</h2>
+                    <p>Ingresa tus credenciales para continuar</p>
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">
-                        <i class="bi bi-lock"></i> Contraseña
-                    </label>
-                    {{ form.password }}
+                {% if request.GET.changed == '1' %}
+                <div class="alert alert-success">
+                    <i class="bi bi-check-circle"></i>
+                    <span>Contraseña actualizada. Inicia sesión con tu nueva contraseña.</span>
                 </div>
+                {% endif %}
 
-                <div class="form-check">
-                    {{ form.remember_me }}
-                    <label for="{{ form.remember_me.id_for_label }}">
-                        Recordar sesión
-                    </label>
+                {% if request.GET.logged_out == '1' %}
+                <div class="alert alert-success">
+                    <i class="bi bi-box-arrow-right"></i>
+                    <span>Sesión cerrada correctamente.</span>
                 </div>
+                {% endif %}
 
-                <button type="submit" class="btn btn-primary btn-lg btn-block">
-                    <i class="bi bi-box-arrow-in-right"></i>
-                    Iniciar Sesión
-                </button>
-            </form>
+                {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    <i class="bi bi-info-circle"></i>
+                    <span>{{ message }}</span>
+                </div>
+                {% endfor %}
+                {% endif %}
 
-            <div
-                style="text-align: center; margin-top: var(--space-lg); color: var(--gray); font-size: var(--font-size-sm);">
-                <p>v1.0.0 - Mobile First PWA</p>
-            </div>
+                {% if form.errors %}
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <span>Usuario o contraseña incorrectos</span>
+                </div>
+                {% endif %}
+
+                <form method="post" action="{% url 'accounts:login' %}">
+                    {% csrf_token %}
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="bi bi-person-circle"></i> Usuario
+                        </label>
+                        {{ form.username }}
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="bi bi-shield-lock"></i> Contraseña
+                        </label>
+                        {{ form.password }}
+                    </div>
+
+                    <div class="form-check">
+                        {{ form.remember_me }}
+                        <label for="{{ form.remember_me.id_for_label }}">
+                            Mantener sesión iniciada
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn-login">
+                        <i class="bi bi-box-arrow-in-right"></i>
+                        Iniciar Sesión
+                    </button>
+                </form>
+
+                <div class="login-footer">
+                    <i class="bi bi-shield-check"></i> Sistema Seguro v2.0
+                </div>
         </div>
     </div>
 

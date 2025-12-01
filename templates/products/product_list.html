@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Productos - AGROTECNICA MIJAEL{% endblock %}
+{% block title %}Productos - Kelvin Repuestos{% endblock %}
 {% block page_title %}Productos{% endblock %}
 
 {% block app_bar_action %}
@@ -14,8 +14,9 @@
 <!-- Search Bar -->
 <div class="search-bar">
     <i class="bi bi-search search-bar-icon"></i>
-    <input type="text" id="searchInput" placeholder="Buscar productos..." value="{{ request.GET.search }}">
+    <input type="text" id="searchInput" placeholder="Buscar por nombre, código o categoría" value="{{ request.GET.search }}">
 </div>
+<div id="productSuggest" class="list-group" style="display:none; position:relative; z-index:5; margin-top:-10px;"></div>
 
 <!-- Alerts -->
 {% if low_stock_count > 0 %}
@@ -28,7 +29,7 @@
 <!-- Product Grid -->
 <div class="product-grid">
     {% for product in products %}
-    <div class="product-card" onclick="location.href='{% url 'products:product_edit' product.pk %}'">
+    <div class="product-card" onclick="window.location.href='{% url 'products:product_edit' product.pk %}'">
         {% if product.image %}
         <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-card-image">
         {% else %}
@@ -38,7 +39,9 @@
         </div>
         {% endif %}
 
-        {% if product.is_low_stock %}
+        {% if product.available_stock == 0 %}
+        <span class="badge badge-danger product-card-badge">AGOTADO</span>
+        {% elif product.is_low_stock %}
         <span class="badge badge-warning product-card-badge">Stock Bajo</span>
         {% elif product.is_expiring_soon %}
         <span class="badge badge-danger product-card-badge">Por Vencer</span>
@@ -48,11 +51,15 @@
             <div class="product-card-title">{{ product.name }}</div>
             <div class="product-card-price">S/ {{ product.sale_price }}</div>
             <div class="product-card-stock">
-                <i class="bi bi-box-seam"></i> Stock: {{ product.stock }}
+                <i class="bi bi-box-seam"></i> Disponible: {{ product.available_stock }}
+            </div>
+            <div class="product-card-stock" style="color: var(--gray);">
+                Reservado: {{ product.reserved_stock }}
             </div>
         </div>
         <div class="d-flex" style="gap: var(--space-sm); padding: var(--space-md);">
-            <a href="{% url 'products:product_delete' product.pk %}" class="btn btn-danger btn-sm btn-icon" title="Eliminar" onclick="event.stopPropagation();">
+            <a href="{% url 'products:product_delete' product.pk %}" class="btn btn-danger btn-sm btn-icon"
+                title="Eliminar" onclick="event.stopPropagation();">
                 <i class="bi bi-trash"></i>
             </a>
         </div>
@@ -93,21 +100,61 @@
 
 {% block extra_js %}
 <script>
-    // Live search
+    // Autocomplete search with API
     const searchInput = document.getElementById('searchInput');
-    let searchTimeout;
-
-    searchInput.addEventListener('input', function () {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(() => {
-            const url = new URL(window.location);
-            if (this.value) {
-                url.searchParams.set('search', this.value);
-            } else {
-                url.searchParams.delete('search');
+    const suggestBox = document.getElementById('productSuggest');
+    let timer;
+    let results = [];
+    let selIndex = -1;
+    
+    searchInput.addEventListener('input', function() {
+        clearTimeout(timer);
+        const q = this.value.trim();
+        if (q.length < 2) { suggestBox.style.display='none'; return; }
+        timer = setTimeout(async () => {
+            try {
+                const res = await fetch(`/api/products/?search=${encodeURIComponent(q)}&ordering=name`);
+                const data = await res.json();
+                const list = Array.isArray(data) ? data : (data.results || []);
+                results = list.slice(0, 10);
+                renderSuggest();
+            } catch(e) {
+                suggestBox.style.display = 'none';
             }
-            window.location = url;
-        }, 500);
+        }, 250);
     });
+    
+    searchInput.addEventListener('keydown', function(e) {
+        if (suggestBox.style.display === 'none') return;
+        if (e.key === 'ArrowDown') { e.preventDefault(); selIndex = Math.min(selIndex+1, results.length-1); highlight(); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); selIndex = Math.max(selIndex-1, 0); highlight(); }
+        else if (e.key === 'Enter') { e.preventDefault(); if (results[selIndex]) goEdit(results[selIndex]); }
+        else if (e.key === 'Escape') { suggestBox.style.display = 'none'; }
+    });
+    
+    function renderSuggest() {
+        if (!results.length) { suggestBox.style.display='none'; return; }
+        selIndex = -1;
+        suggestBox.innerHTML = results.map((p, i) => `
+            <div class="list-item" data-idx="${i}" onclick="goEditByIndex(${i})">
+                <div class="list-item-content">
+                    <div class="list-item-title">${p.name} <small style="color: var(--gray);">${p.code||''}</small></div>
+                    <div class="list-item-subtitle">${p.category_name||''} • Stock: ${p.stock}</div>
+                </div>
+                <div class="list-item-action">
+                    <span class="badge">S/ ${Number(p.sale_price).toFixed(2)}</span>
+                </div>
+            </div>
+        `).join('');
+        suggestBox.style.display='block';
+    }
+    
+    function highlight() {
+        const items = suggestBox.querySelectorAll('.list-item');
+        items.forEach((el, i) => el.style.background = i === selIndex ? 'var(--gray-light)' : 'transparent');
+    }
+    
+    window.goEditByIndex = function(i) { const p = results[i]; if (p) goEdit(p); }
+    function goEdit(p) { window.location.href = `/products/${p.id}/edit/`; }
 </script>
 {% endblock %}

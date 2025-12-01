@@ -14,6 +14,7 @@ const App = {
     this.initTheme();
     this.initForms();
     this.initToasts();
+    this.initLogout();
     console.log('🚀 AGROTECNICA MIJAEL App Initialized');
   },
   
@@ -137,6 +138,30 @@ const App = {
     const spinner = element.querySelector('[data-loading]');
     if (spinner) spinner.remove();
     element.disabled = false;
+  }
+  ,
+  // Logout Cleanup
+  initLogout() {
+    const links = document.querySelectorAll('[data-logout]');
+    links.forEach(link => {
+      link.addEventListener('click', async (e) => {
+        e.preventDefault();
+        try {
+          localStorage.clear();
+          sessionStorage.clear();
+          document.documentElement.setAttribute('data-theme', 'light');
+          if (window.caches) {
+            const keys = await caches.keys();
+            await Promise.all(keys.map(k => caches.delete(k)));
+          }
+        } catch (err) {}
+        const href = link.getAttribute('href');
+        if (window.App) {
+          window.App.showToast('Sesión cerrada', 'success', 800);
+        }
+        setTimeout(() => { window.location.href = href; }, 400);
+      });
+    });
   }
 };
 

@@ -50,6 +50,11 @@ class Purchase(models.Model):
         verbose_name='Notas'
     )
     
+    is_draft = models.BooleanField(
+        default=False,
+        verbose_name='Borrador'
+    )
+    
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
@@ -142,19 +147,20 @@ class PurchaseItem(models.Model):
     def save(self, *args, **kwargs):
         self.subtotal = self.quantity * self.unit_price
         super().save(*args, **kwargs)
-        product = self.product
-        previous = product.stock
-        product.stock = previous + self.quantity
-        product.save()
-        StockMovement.objects.create(
-            product=product,
-            movement_type=StockMovement.MovementType.PURCHASE,
-            quantity=self.quantity,
-            previous_stock=previous,
-            new_stock=product.stock,
-            reference_id=self.purchase_id,
-            created_by=self.purchase.created_by,
-        )
+        if not self.purchase.is_draft:
+            product = self.product
+            previous = product.stock
+            product.stock = previous + self.quantity
+            product.save()
+            StockMovement.objects.create(
+                product=product,
+                movement_type=StockMovement.MovementType.PURCHASE,
+                quantity=self.quantity,
+                previous_stock=previous,
+                new_stock=product.stock,
+                reference_id=self.purchase_id,
+                created_by=self.purchase.created_by,
+            )
 
 
 class StockMovement(models.Model):

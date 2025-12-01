@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Compras - AGROTECNICA MIJAEL{% endblock %}
+{% block title %}Compras - Kelvin Repuestos{% endblock %}
 {% block page_title %}Compras{% endblock %}
 
 {% block app_bar_action %}
@@ -24,6 +24,9 @@
             </div>
         </div>
         <div class="list-item-action">
+            {% if purchase.is_draft %}
+            <span class="badge" style="background: var(--gray-light); color: var(--dark); margin-right: var(--space-sm);">BORRADOR</span>
+            {% endif %}
             <strong class="text-primary">S/ {{ purchase.total }}</strong>
         </div>
     </div>
@@ -51,4 +54,3 @@
 </div>
 {% endif %}
 {% endblock %}
-

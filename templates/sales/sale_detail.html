@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Venta {{ sale.code }} - AGROTECNICA MIJAEL{% endblock %}
+{% block title %}Venta {{ sale.code }} - Kelvin Repuestos{% endblock %}
 {% block page_title %}{{ sale.code }}{% endblock %}
 
 {% block content %}
@@ -90,5 +90,10 @@
     <a href="{% url 'sales:sale_list' %}" class="btn btn-outline btn-block">
         <i class="bi bi-arrow-left"></i> Volver a Ventas
     </a>
+    {% if whatsapp_text_url %}
+    <a href="{{ whatsapp_text_url }}" target="_blank" class="btn btn-success btn-block mt-sm">
+        <i class="bi bi-whatsapp"></i> Enviar por WhatsApp
+    </a>
+    {% endif %}
 </div>
 {% endblock %}

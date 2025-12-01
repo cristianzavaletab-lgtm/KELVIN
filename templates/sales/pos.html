@@ -18,6 +18,24 @@
         padding: var(--space-md);
     }
 
+    .product-card.disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
+    .product-card { position: relative; }
+    .soldout-badge {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        background: var(--danger);
+        color: var(--white);
+        padding: 4px 8px;
+        border-radius: var(--radius-sm);
+        font-size: var(--font-size-sm);
+    }
+
     .pos-cart {
         background: var(--white);
         border-radius: var(--radius-lg);
@@ -57,6 +75,13 @@
         cursor: pointer;
     }
 
+    .qty-btn:disabled {
+        background: var(--gray);
+        color: var(--white);
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
     .cart-totals {
         border-top: 2px solid var(--gray-light);
         padding-top: var(--space-md);
@@ -84,14 +109,22 @@
         <!-- Search -->
         <div class="search-bar mb-lg">
             <i class="bi bi-search search-bar-icon"></i>
-            <input type="text" id="productSearch" placeholder="Buscar producto...">
+            <input type="text" id="productSearch" placeholder="Buscar producto por nombre, código o categoría">
+        </div>
+        <div id="productSuggestions" class="list-group" style="display:none; position:relative; z-index:5; margin-top:-10px;">
+        </div>
         </div>
 
         <!-- Product Grid -->
         <div class="product-grid" id="productGrid">
             {% for product in products %}
-            <div class="product-card"
-                onclick="addToCart({{ product.id }}, '{{ product.name|escapejs }}', {{ product.sale_price }}, {{ product.stock }})">
+            <div class="product-card {% if product.available_stock|default:0 <= 0 %}disabled{% endif %}"
+                {% if product.available_stock|default:0 > 0 %}
+                onclick="addToCart({{ product.id }}, '{{ product.name|escapejs }}', '{{ product.sale_price }}', '{{ product.available_stock }}')"
+                {% endif %}>
+                {% if product.available_stock|default:0 <= 0 %}
+                <span class="soldout-badge">Sin stock</span>
+                {% endif %}
                 {% if product.image %}
                 <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-card-image">
                 {% else %}
@@ -105,7 +138,12 @@
                     <div class="product-card-title">{{ product.name }}</div>
                     <div class="product-card-price">S/ {{ product.sale_price }}</div>
                     <div class="product-card-stock">
-                        <i class="bi bi-box-seam"></i> {{ product.stock }}
+                        <i class="bi bi-box-seam"></i> {{ product.available_stock }} disponibles
+                    </div>
+                    <div class="mt-sm">
+                        <button class="btn btn-sm btn-outline" {% if product.available_stock|default:0 <= 0 %}disabled{% endif %} onclick="event.stopPropagation(); reserveProduct({{ product.id }}, '{{ product.name|escapejs }}', {{ product.available_stock }})">
+                            <i class="bi bi-bookmark"></i> Reservar
+                        </button>
                     </div>
                 </div>
             </div>
@@ -177,6 +215,18 @@
             </div>
         </div>
 
+        <div class="card mb-lg">
+            <div class="card-header">
+                <i class="bi bi-bookmark"></i> Reservas del Cliente
+            </div>
+            <div class="card-body" id="customerReservations">
+                <div class="empty-state">
+                    <div class="empty-state-icon"><i class="bi bi-bookmark"></i></div>
+                    <div class="empty-state-text">Sin reservas</div>
+                </div>
+            </div>
+        </div>
+
         <!-- Payment Method -->
         <div class="form-group">
             <label class="form-label">Método de Pago</label>
@@ -213,6 +263,10 @@
             onclick="shareInvoicePNG()">
             <i class="bi bi-whatsapp"></i> Compartir PNG por WhatsApp
         </button>
+        <button class="btn btn-success btn-block mt-sm" id="btnSendWhatsappText" style="display:none;"
+            onclick="sendWhatsappText()">
+            <i class="bi bi-whatsapp"></i> Enviar por WhatsApp
+        </button>
     </div>
 </div>
 {% endblock %}
@@ -221,6 +275,10 @@
 <script>
     let cart = [];
     let lastInvoicePngUrl = null;
+    let lastWhatsappUrl = null;
+    let suggestionIndex = -1;
+    let suggestions = [];
+    let fetchTimeout;
 
     function toggleCustomerMode() {
         const isNew = document.getElementById('isNewCustomer').checked;
@@ -231,8 +289,17 @@
     function addToCart(productId, productName, price, stock) {
         const existingItem = cart.find(item => item.product_id === productId);
 
+        let unitPrice = typeof price === 'number' ? price : Number(String(price).replace(',', '.'));
+        if (!Number.isFinite(unitPrice)) unitPrice = 0;
+        let max = typeof stock === 'number' ? stock : Number(String(stock).replace(',', '.'));
+        if (!Number.isFinite(max)) max = 0;
+        if (max <= 0) {
+            App.showToast('Stock insuficiente', 'warning');
+            return;
+        }
+
         if (existingItem) {
-            if (existingItem.quantity < stock) {
+            if (existingItem.quantity < max) {
                 existingItem.quantity++;
                 existingItem.subtotal = existingItem.quantity * existingItem.price;
             } else {
@@ -243,10 +310,10 @@
             cart.push({
                 product_id: productId,
                 name: productName,
-                price: price,
+                price: unitPrice,
                 quantity: 1,
-                subtotal: price,
-                max_stock: stock
+                subtotal: unitPrice,
+                max_stock: max
             });
         }
 
@@ -313,16 +380,17 @@
             <div class="cart-item-info">
                 <strong>${item.name}</strong><br>
                 <small>S/ ${item.price.toFixed(2)}</small>
+                <div style="color: var(--gray); font-size: var(--font-size-sm);">Disponibles: ${item.max_stock}</div>
             </div>
             <div class="cart-item-qty">
-                <button class="qty-btn" onclick="updateQuantity(${item.product_id}, -1)">-</button>
+                <button class="qty-btn" onclick="updateQuantity(${item.product_id}, -1)" ${item.quantity <= 1 ? 'disabled' : ''}>-</button>
                 <input type="number" class="form-control" 
                        style="width: 70px; text-align: center; padding: 2px; height: 32px; margin: 0 5px;" 
                        value="${item.quantity}" 
                        min="1" 
                        max="${item.max_stock}"
                        onchange="setQuantity(${item.product_id}, this.value)">
-                <button class="qty-btn" onclick="updateQuantity(${item.product_id}, 1)">+</button>
+                <button class="qty-btn" onclick="updateQuantity(${item.product_id}, 1)" ${item.quantity >= item.max_stock ? 'disabled' : ''}>+</button>
             </div>
             <strong style="min-width: 60px; text-align: right;">S/ ${item.subtotal.toFixed(2)}</strong>
             <button class="btn btn-sm btn-danger btn-icon" onclick="removeFromCart(${item.product_id})">
@@ -416,6 +484,13 @@
                         document.getElementById('btnShareWhatsApp').style.display = 'block';
                     } catch (e) { }
                 }
+                if (data.whatsapp_text_url) {
+                    lastWhatsappUrl = data.whatsapp_text_url;
+                    try {
+                        window.open(lastWhatsappUrl, '_blank');
+                        document.getElementById('btnSendWhatsappText').style.display = 'block';
+                    } catch (e) { }
+                }
                 clearCart();
                 setTimeout(() => {
                     window.location.href = '{% url "sales:sale_list" %}';
@@ -432,15 +507,139 @@
     }
 
     // Product search
-    document.getElementById('productSearch').addEventListener('input', function () {
-        const search = this.value.toLowerCase();
-        const products = document.querySelectorAll('.product-card');
-
-        products.forEach(product => {
-            const text = product.textContent.toLowerCase();
-            product.style.display = text.includes(search) ? 'block' : 'none';
-        });
+    const searchInput = document.getElementById('productSearch');
+    const suggestionBox = document.getElementById('productSuggestions');
+    
+    searchInput.addEventListener('input', function () {
+        clearTimeout(fetchTimeout);
+        const q = this.value.trim();
+        if (q.length < 2) {
+            suggestionBox.style.display = 'none';
+            return;
+        }
+        fetchTimeout = setTimeout(async () => {
+            try {
+                const res = await fetch(`/api/products/?search=${encodeURIComponent(q)}&ordering=name`);
+                const data = await res.json();
+                const list = Array.isArray(data) ? data : (data.results || []);
+                suggestions = list.slice(0, 10);
+                renderSuggestions();
+            } catch (e) {
+                suggestionBox.style.display = 'none';
+            }
+        }, 250);
     });
+    
+    searchInput.addEventListener('keydown', function(e) {
+        if (suggestionBox.style.display === 'none') return;
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            suggestionIndex = Math.min(suggestionIndex + 1, suggestions.length - 1);
+            highlightSuggestion();
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            suggestionIndex = Math.max(suggestionIndex - 1, 0);
+            highlightSuggestion();
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (suggestions[suggestionIndex]) selectSuggestion(suggestions[suggestionIndex]);
+        } else if (e.key === 'Escape') {
+            suggestionBox.style.display = 'none';
+        }
+    });
+    
+    function renderSuggestions() {
+        if (!suggestions.length) { suggestionBox.style.display = 'none'; return; }
+        suggestionIndex = -1;
+        suggestionBox.innerHTML = suggestions.map((p, idx) => `
+            <div class="list-item" data-idx="${idx}" onclick="selectSuggestionByIndex(${idx})">
+                <div class="list-item-content">
+                    <div class="list-item-title">${p.name} <small style="color: var(--gray);">${p.code||''}</small></div>
+                    <div class="list-item-subtitle">${p.category_name||''} • Disp: ${p.available_stock} • Res: ${p.reserved_stock||0}</div>
+                </div>
+                <div class="list-item-action">
+                    <span class="badge">S/ ${Number(p.sale_price).toFixed(2)}</span>
+                </div>
+            </div>
+        `).join('');
+        suggestionBox.style.display = 'block';
+    }
+    
+    function highlightSuggestion() {
+        const items = suggestionBox.querySelectorAll('.list-item');
+        items.forEach((el, i) => {
+            el.style.background = i === suggestionIndex ? 'var(--gray-light)' : 'transparent';
+        });
+    }
+    
+    window.selectSuggestionByIndex = function(idx) {
+        const p = suggestions[idx];
+        if (p) selectSuggestion(p);
+    }
+    
+    function selectSuggestion(p) {
+        suggestionBox.style.display = 'none';
+        addToCart(p.id, p.name, Number(p.sale_price), Number(p.available_stock));
+        searchInput.value = '';
+    }
+
+    async function reserveProduct(productId, productName, maxAvail) {
+        const isNew = document.getElementById('isNewCustomer').checked;
+        if (isNew) { App.showToast('Selecciona un cliente existente para reservar', 'warning'); return; }
+        const cid = document.getElementById('customerSelect').value;
+        if (!cid) { App.showToast('Selecciona un cliente para reservar', 'warning'); return; }
+        const qtyStr = prompt(`Reservar cantidad para ${productName} (máx ${maxAvail})`, '1');
+        if (qtyStr === null) return;
+        const qty = parseInt(qtyStr);
+        if (!qty || qty < 1 || qty > maxAvail) { App.showToast('Cantidad inválida', 'error'); return; }
+        try {
+            const res = await fetch('{% url "sales:create_reservation" %}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                body: JSON.stringify({ product_id: productId, quantity: qty, customer_id: cid })
+            });
+            const data = await res.json();
+            if (data.success) {
+                App.showToast('Reserva creada', 'success');
+                loadCustomerReservations();
+            } else {
+                App.showToast('Error: ' + (data.error||'No se pudo reservar'), 'error');
+            }
+        } catch (e) {
+            App.showToast('Error de red al reservar', 'error');
+        }
+    }
+
+    async function loadCustomerReservations() {
+        const cid = document.getElementById('customerSelect').value;
+        const container = document.getElementById('customerReservations');
+        if (!cid) { container.innerHTML = `<div class="empty-state"><div class="empty-state-icon"><i class="bi bi-bookmark"></i></div><div class="empty-state-text">Sin reservas</div></div>`; return; }
+        try {
+            const res = await fetch(`{% url "sales:list_reservations" %}?customer_id=${cid}`);
+            const data = await res.json();
+            if (data.success && data.reservations.length) {
+                container.innerHTML = data.reservations.map(r => `
+                    <div class="list-item">
+                        <div class="list-item-content">
+                            <div class="list-item-title">${r.name} <small style="color: var(--gray);">${r.code}</small></div>
+                            <div class="list-item-subtitle">Reservado: ${r.quantity}</div>
+                        </div>
+                        <div class="list-item-action" style="display:flex; gap: var(--space-sm);">
+                            <button class="btn btn-sm btn-primary" onclick="addToCart(${r.product_id}, '${r.name.replace(/'/g, "\'")}', Number(r.sale_price), Number(r.available_stock))">
+                                <i class="bi bi-cart-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                container.innerHTML = `<div class="empty-state"><div class="empty-state-icon"><i class="bi bi-bookmark"></i></div><div class="empty-state-text">Sin reservas</div></div>`;
+            }
+        } catch (e) {
+            container.innerHTML = `<div class="empty-state"><div class="empty-state-icon"><i class="bi bi-bookmark"></i></div><div class="empty-state-text">Sin reservas</div></div>`;
+        }
+    }
+
+    document.getElementById('customerSelect').addEventListener('change', loadCustomerReservations);
 </script>
 {% endblock %}
 async function shareInvoicePNG() {
@@ -460,5 +659,17 @@ App.showToast('Adjunta el PNG descargado en WhatsApp', 'info');
 }
 } catch (e) {
 App.showToast('No se pudo compartir la factura', 'error');
+}
+}
+
+function sendWhatsappText() {
+if (!lastWhatsappUrl) {
+App.showToast('No hay enlace de WhatsApp disponible', 'warning');
+return;
+}
+try {
+window.open(lastWhatsappUrl, '_blank');
+} catch (e) {
+App.showToast('No se pudo abrir WhatsApp', 'error');
 }
 }

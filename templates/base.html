@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-    <meta name="description" content="Sistema de Gestión Agropecuaria Mobile-First">
+    <meta name="description" content="Sistema de Gestión de Repuestos – Compra y Venta">
     <meta name="theme-color" content="#2ecc71">
 
     <!-- PWA Meta Tags -->
@@ -13,13 +13,13 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="AGRO">
+    <meta name="apple-mobile-web-app-title" content="Kelvin Repuestos">
 
     <!-- Icons -->
-    <!-- <link rel="icon" type="image/png" sizes="192x192" href="{% static 'icons/icon-192x192.png' %}"> -->
-    <!-- <link rel="apple-touch-icon" href="{% static 'icons/icon-192x192.png' %}"> -->
+    <link rel="icon" type="image/png" sizes="192x192" href="{% static 'icons/icon-192x192.png' %}">
+    <link rel="apple-touch-icon" href="{% static 'icons/icon-192x192.png' %}">
 
-    <title>{% block title %}AGROTECNICA MIJAEL{% endblock %}</title>
+    <title>{% block title %}Kelvin Repuestos{% endblock %}</title>
 
     <!-- CSS -->
     <link rel="stylesheet" href="{% static 'css/base.css' %}">
@@ -39,8 +39,9 @@
 
     <!-- Drawer Navigation -->
     <nav class="drawer">
-        <div class="drawer-header">
-            <h3>AGROTECNICA</h3>
+        <div class="drawer-header" style="display:flex; align-items:center; gap: var(--space-sm);">
+            <img src="{% static 'img/logo.svg' %}" alt="Kelvin Repuestos" style="height:28px;" onerror="this.style.display='none'">
+            <h3>Kelvin Repuestos</h3>
             {% if user.is_authenticated %}
             <div class="drawer-user">
                 <i class="bi bi-person-circle"></i>
@@ -99,9 +100,18 @@
 
             <div class="drawer-divider"></div>
 
-
-
-            <a href="{% url 'accounts:logout' %}" class="drawer-nav-item">
+            <a href="{% url 'accounts:whatsapp_templates' %}"
+                class="drawer-nav-item {% if 'whatsapp-templates' in request.path %}active{% endif %}">
+                <i class="bi bi-whatsapp"></i>
+                <span>Plantillas WhatsApp</span>
+            </a>
+            <a href="{% url 'accounts:password_change' %}"
+                class="drawer-nav-item {% if 'password-change' in request.path %}active{% endif %}">
+                <i class="bi bi-shield-lock"></i>
+                <span>Cambiar Contraseña</span>
+            </a>
+            
+            <a href="{% url 'accounts:logout' %}" class="drawer-nav-item" data-logout>
                 <i class="bi bi-box-arrow-right"></i>
                 <span>Cerrar Sesión</span>
             </a>
@@ -116,7 +126,7 @@
                 <i class="bi bi-list"></i>
             </div>
 
-            <h1 class="app-bar-title">{% block page_title %}AGRO{% endblock %}</h1>
+            <h1 class="app-bar-title">{% block page_title %}Kelvin Repuestos{% endblock %}</h1>
 
             <div class="app-bar-actions" style="display:flex; align-items:center; gap: var(--space-sm);">
                 <div class="app-bar-icon">

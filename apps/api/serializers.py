@@ -18,11 +18,12 @@ class ProductSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
     supplier_name = serializers.CharField(source='supplier.name', read_only=True)
     is_low_stock = serializers.BooleanField(read_only=True)
+    available_stock = serializers.IntegerField(source='available_stock', read_only=True)
     
     class Meta:
         model = Product
         fields = ['id', 'code', 'name', 'category', 'category_name', 'presentation',
-                  'purchase_price', 'sale_price', 'stock', 'min_stock', 'expiration_date',
+                  'purchase_price', 'sale_price', 'stock', 'reserved_stock', 'available_stock', 'min_stock', 'expiration_date',
                   'supplier', 'supplier_name', 'image', 'is_active', 'is_low_stock',
                   'created_at', 'updated_at']
         read_only_fields = ['code', 'created_at', 'updated_at']

@@ -37,15 +37,15 @@ class ProductListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['categories'] = Category.objects.all()
-        context['low_stock_count'] = Product.objects.filter(stock__lte=F('min_stock')).count()
+        context['low_stock_count'] = Product.objects.annotate(available=F('stock')-F('reserved_stock')).filter(available__lte=F('min_stock')).count()
         return context
 
 
 class ProductCreateView(LoginRequiredMixin, CreateView):
     model = Product
     template_name = 'products/product_form.html'
-    fields = ['name', 'category', 'presentation', 'purchase_price', 'sale_price', 
-              'stock', 'min_stock', 'expiration_date', 'supplier', 'image']
+    fields = ['code', 'name', 'category', 'presentation', 'description', 'purchase_price', 'sale_price', 
+             'stock', 'reserved_stock', 'min_stock', 'expiration_date', 'supplier', 'image']
     success_url = reverse_lazy('products:product_list')
     
     def get_context_data(self, **kwargs):
@@ -57,8 +57,8 @@ class ProductCreateView(LoginRequiredMixin, CreateView):
 class ProductUpdateView(LoginRequiredMixin, UpdateView):
     model = Product
     template_name = 'products/product_form.html'
-    fields = ['name', 'category', 'presentation', 'purchase_price', 'sale_price', 
-              'stock', 'min_stock', 'expiration_date', 'supplier', 'image', 'is_active']
+    fields = ['code', 'name', 'category', 'presentation', 'description', 'purchase_price', 'sale_price', 
+             'stock', 'reserved_stock', 'min_stock', 'expiration_date', 'supplier', 'image', 'is_active']
     success_url = reverse_lazy('products:product_list')
     
     def get_context_data(self, **kwargs):
@@ -72,12 +72,12 @@ class ProductDeleteView(LoginRequiredMixin, DeleteView):
     template_name = 'products/confirm_delete.html'
     success_url = reverse_lazy('products:product_list')
     
-    def delete(self, request, *args, **kwargs):
-        # Soft delete
+    def post(self, request, *args, **kwargs):
         self.object = self.get_object()
         self.object.is_active = False
         self.object.save()
-        self.object.save()
+        from django.contrib import messages
+        messages.success(request, 'Producto desactivado correctamente')
         return HttpResponseRedirect(self.success_url)
 
 
