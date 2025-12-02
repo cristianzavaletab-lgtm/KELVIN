@@ -47,14 +47,29 @@ class LoginView(BaseLoginView):
     redirect_authenticated_user = True
     
     def form_valid(self, form):
+        import logging
+        logger = logging.getLogger(__name__)
+        
         user = form.get_user()
+        logger.info(f'Login attempt - User: {user.username}, Active: {user.is_active}, Staff: {user.is_staff}')
+        
         if user.username != 'admin':
+            logger.warning(f'Login denied - User {user.username} is not admin')
             form.add_error(None, 'Solo el usuario admin tiene acceso')
             return self.form_invalid(form)
+        
+        logger.info(f'Login successful for user: {user.username}')
         remember_me = form.cleaned_data.get('remember_me')
         if not remember_me:
             self.request.session.set_expiry(0)
         return super().form_valid(form)
+    
+    def form_invalid(self, form):
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f'Login failed - Form errors: {form.errors}')
+        logger.error(f'Login failed - Non-field errors: {form.non_field_errors()}')
+        return super().form_invalid(form)
 
 
 class LogoutView(BaseLogoutView):
