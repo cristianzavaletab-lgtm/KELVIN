@@ -66,9 +66,28 @@ class LoginView(BaseLoginView):
     
     def form_invalid(self, form):
         import logging
+        from django.conf import settings
+        from django.contrib.auth import get_user_model
+        
         logger = logging.getLogger(__name__)
         logger.error(f'Login failed - Form errors: {form.errors}')
         logger.error(f'Login failed - Non-field errors: {form.non_field_errors()}')
+        
+        # Diagnóstico de Runtime
+        User = get_user_model()
+        username = form.data.get('username')
+        
+        try:
+            user = User.objects.get(username=username)
+            logger.info(f'RUNTIME DIAGNOSTIC: User "{username}" EXISTS in DB')
+            logger.info(f'RUNTIME DIAGNOSTIC: User details - Active: {user.is_active}, Staff: {user.is_staff}, ID: {user.id}')
+            logger.info(f'RUNTIME DIAGNOSTIC: Password valid: {user.check_password(form.data.get("password"))}')
+        except User.DoesNotExist:
+            logger.error(f'RUNTIME DIAGNOSTIC: User "{username}" DOES NOT EXIST in DB')
+            
+        logger.info(f'RUNTIME DB ENGINE: {settings.DATABASES["default"]["ENGINE"]}')
+        logger.info(f'RUNTIME DB NAME: {settings.DATABASES["default"]["NAME"]}')
+        
         return super().form_invalid(form)
 
 

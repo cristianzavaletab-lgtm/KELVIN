@@ -51,10 +51,13 @@ class Command(BaseCommand):
         
         # 4. Verificar configuración de Django
         from django.conf import settings
+        from django.db import connection
         self.stdout.write(self.style.WARNING('\n=== CONFIGURACIÓN ==='))
         self.stdout.write(f'  - AUTH_USER_MODEL: {settings.AUTH_USER_MODEL}')
         self.stdout.write(f'  - DEBUG: {settings.DEBUG}')
-        self.stdout.write(f'  - ALLOWED_HOSTS: {settings.ALLOWED_HOSTS}')
+        self.stdout.write(f'  - DB ENGINE: {settings.DATABASES["default"]["ENGINE"]}')
+        self.stdout.write(f'  - DB NAME: {settings.DATABASES["default"]["NAME"]}')
+        self.stdout.write(f'  - DB HOST: {settings.DATABASES["default"].get("HOST", "N/A")}')
         
         if hasattr(settings, 'AUTHENTICATION_BACKENDS'):
             self.stdout.write(f'  - AUTHENTICATION_BACKENDS: {settings.AUTHENTICATION_BACKENDS}')
